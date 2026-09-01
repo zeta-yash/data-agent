@@ -4,8 +4,10 @@ from operator import add
 
 
 class AgentSchema(BaseModel):
-    #LLM's read this 
+    # LLM's read all this - as a comlete context
+    # ye description - AI model ke samajhne ke liye hai
     messages : Annotated[list,add] = Field (...,description="List of messages to be processed by Agents.")
+    user_question : str = Field(...,description="The original question asked by the user.")
     curated_ques : str = Field (...,description="List of curated user questions)")
     prompt_query_context : str = Field (...,description="A detailed prompt with SQL DB context for the prompt query that will help agent to generate SQL Query.")
     is_safe : Literal["Yes","No"] = Field(...,description="Whether the generated SQL query is safe to execute or not.")
