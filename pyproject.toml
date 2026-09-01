@@ -7,7 +7,12 @@ authors = [
     { name = "Yash Gupta", email = "somgupta070703@gmail.com" }
 ]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "langchain>=1.3.18",
+    "langchain-mistralai>=1.1.6",
+    "langgraph>=1.2.11",
+    "pydantic>=2.13.5",
+]
 
 [project.scripts]
 data-agent = "data_agent:main"
