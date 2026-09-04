@@ -33,6 +33,7 @@ def curate_ques(state: AgentSchema) -> AgentSchema:
     response = llm.invoke(f"Curate the following question: {user_question}")
 
     state.curated_ques = response  # Update the state with the curated question
+    state.messages = state.messages+[HumanMessage]
     return state # puri state ko return kar rahe hai
 
 def prompt_query_context(state: AgentSchema) -> AgentSchema:
@@ -43,7 +44,7 @@ def prompt_query_context(state: AgentSchema) -> AgentSchema:
     
     For which we need data.
     
-    we will create a database in the utility."""
+    we will create a database in the utility.""" 
 
 
 

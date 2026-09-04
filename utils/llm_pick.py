@@ -23,5 +23,5 @@ def pick_llm(level:str)->str:
 
     return llm
 
-llm_obj=pick_llm("low")
-print(llm_obj.invoke("What is the capital of France?"))
+# llm_obj=pick_llm("low")
+# print(llm_obj.invoke("What is the capital of France?"))
