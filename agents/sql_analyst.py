@@ -92,7 +92,9 @@ def prompt_query_context(state: AgentSchema) -> AgentSchema:
 
     return state # state i.e. schema.py>AgentSchema ko hi return kiya jayega 
 
-    # ==> ChatMistralAI(model_name="ministral-8b-latest",temperature=0).invoke(human_query -> polished query -> database schema + polished query -> "FINAL QUERY") ==> saved in schema.py>>AgentSchema
+    # ==> ChatMistralAI(model_name="ministral-8b-latest",temperature=0).invoke(human_query -> polished query using low llm -> (database schema + polished query) using medium llm -> "FINAL QUERY") ==> saved in schema.py>>AgentSchema
+
+    
 
     
 
