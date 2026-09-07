@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 #all this was needed to access a sibling directory from a different directory in python.
 
 from utils.llm_pick import pick_llm #using a function in python
-from models.schema import AgentSchema
+from models.schema import AgentSchema, JudgeSchema
 from langchain_core.messages import HumanMessage
 from utils.database import DatabaseUtil
 
@@ -85,16 +85,42 @@ def prompt_query_context(state: AgentSchema) -> AgentSchema:
     """    
     state.prompt_query_context = prompt
 
-    llm = pick_llm("medium")
-    generated_sql_query = llm.invoke(prompt) # get the final answer from the llm
-
-    state.generated_sql_query = generated_sql_query # state i.e. schema.py>AgentSchema me save kara diya
-
     return state # state i.e. schema.py>AgentSchema ko hi return kiya jayega 
 
     # ==> ChatMistralAI(model_name="ministral-8b-latest",temperature=0).invoke(human_query -> polished query using low llm -> (database schema + polished query) using medium llm -> "FINAL QUERY") ==> saved in schema.py>>AgentSchema
 
+#Generate SQL Query node
+def generate_sql(state: AgentSchema) -> AgentSchema:
+
+    prompt = state.prompt_query_context
+
+    llm = pick_llm("medium")
+    generated_sql_query = llm.invoke(prompt) # get the final answer from the llm
+
+    state.generated_sql_query = generated_sql_query # state i.e. schema.py>AgentSchema me save kara diya
+    return state
+
+
+def is_safe(state: AgentSchema) -> AgentSchema:
+
+    sql_query = state.generated_sql_query
+
+    llm = pick_llm('medium')
+    llm_judge = llm.with_structured_output(JudgeSchema)
+
+    prompt = f"""
+    You are an SQL Judge for data security. Your task is to determine whether the SQL query is safe or not. The SQL query should only be used for data retrieval and should not modify the database in any way. Neither the SQL query nor the prompt should contain any SQL commands that can modify the database, such as INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, CREATE, or any other commands that can change the structure or content of the database. If the SQL query is safe, respond with 'Yes' otherwise respond with 'No'. Additionally, provide comments explaining your decision.
     
+    Here's the SQL query to evaluate: {sql_query}"""
+    
+    response = llm_judge.invoke(prompt). model_dump () # Get the structured output as a dictionary
+
+    state.is_safe_sql_response = response('answer')
+
+    return state
+
+
+
 
     
 
