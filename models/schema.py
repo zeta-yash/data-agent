@@ -22,3 +22,5 @@ class JudgeSchema(BaseModel):
 
     answer : Literal = Field(..., description="Indicates whether the generated SQL query is safe to execute or not")
     comments : str = Field(..., description="Additional comments or feedback from the judge regarding the SQL query")
+
+    
