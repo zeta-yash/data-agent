@@ -56,16 +56,39 @@ class DatabaseUtil:
 
         return schema_info_context
 
-obj = DatabaseUtil({
-    "host": "localhost",
-    "port": 5432,
-    "user": "yashgupta",
-    "password": "root",
-    "dbname": "postgres"
-})
 
-result = obj.schema_details("public")
+    def execute_sql(self, query):
+        try:
+            connection = self.connection
+            cursor = connection.cursor()
 
-with open("test_schema_details.txt", "w") as f:
-    f.write(result)
+            cursor.execute(query)
+            result = cursor.fetchall() #so that the results could be sent to LLM in string form, fetchall() always outputs the result in list form
+            connection.commit()
+            return str(result)
+        except Exception as e:
+            print(f"Error executing query: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+    
+
+if __name__ == "main":
+    # run only when this databse.py will be run directly 
+    # this chunk would not run itself in imports
+    obj = DatabaseUtil({
+        "host": "localhost",
+        "port": 5432,
+        "user": "yashgupta",
+        "password": "root",
+        "dbname": "postgres"
+    })
+
+    result = obj.schema_details("public")
+
+    with open("test_schema_details.txt", "w") as f:
+        f.write(result)
 
