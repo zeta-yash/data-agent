@@ -32,7 +32,7 @@ def curate_ques(state: AgentSchema) -> AgentSchema:
 
     user_question = state.user_question 
     llm = pick_llm("low")  # Pick the appropriate LLM based on the level of the query
-    response = llm.invoke(f"Curate the following question: {user_question}")
+    response = llm.invoke(f"Curate the following question: {user_question}").content
 
     state.curated_ques = response  # Update the state with the curated question
     state.messages = state.messages+[HumanMessage(content=f"Response")]
@@ -96,13 +96,13 @@ def generate_sql(state: AgentSchema) -> AgentSchema:
     prompt = state.prompt_query_context
 
     llm = pick_llm("medium")
-    generated_sql_query = llm.invoke(prompt) # get the final answer from the llm = THE MAIN QUERY WE wanted to create.
+    generated_sql_query = llm.invoke(prompt).content # get the final answer from the llm = THE MAIN QUERY WE wanted to create.
 
     state.generated_sql_query = generated_sql_query # state i.e. schema.py>AgentSchema me save kara diya
     return state
 
 
-def is_safe(state: AgentSchema) -> AgentSchema:
+def is_safe_sql(state: AgentSchema) -> AgentSchema:
 
     sql_query = state.generated_sql_query
 
@@ -147,3 +147,50 @@ def execute_sql(state: AgentSchema) -> AgentSchema:
     state.sql_query_execution_result = execution_result
     return state
 
+def represent_final_answer(state: AgentSchema) -> AgentSchema: 
+    # this will be the final answer to the user's question in his local language (executed query to query result in human form) and also added in AI response list.
+
+    execution_result = state.sql_query_execution_result
+    curated_question = state.curated_ques
+
+    llm = pick_llm("low")
+
+    prompt = f"""
+    You are an SQL analyst agent. Your task is to provide a final answer to the user based on the
+    execution result of the SQL query and the user's original question. The final answer should be
+    concise, clear, and directly address the user's query. Avoid including any SQL code or technical
+    details in the final answer. The final answer should be in a user-friendly format that is easy to
+    understand. If the execution result is empty or does not provide a clear answer to the user's question, explain this in the final answer. \n
+    Here is the execution result: {execution_result} \n
+    Here is the user's original question: {curated_question}
+    """
+
+    llm_response = llm.invoke(prompt).content  # Get the final answer from the LLM
+    # .content is used to get only the content of the response, not the metadata like tokens and other metadata.
+    state.final_answer = llm_response
+    state.messages = state.messages + [AIMessage(content=f"{llm_response}")]  # Append the final answer to the messages list
+
+    return state
+
+# ---------------------------------Graph Building------------------------------------
+
+sql_agent_graph = StateGraph(AgentSchema)
+
+# Node
+sql_agent_graph.add_node(curate_ques,name="curate_ques")
+sql_agent_graph.add_node(prompt_query_context,name="prompt_query_context")
+sql_agent_graph.add_node(generate_sql,name="generate_sql")
+sql_agent_graph.add_node(is_safe_sql,name="is_safe_sql")
+sql_agent_graph.add_node(canceled_sql,name="canceled_sql")
+sql_agent_graph.add_node(execute_sql,name="execute_sql")
+sql_agent_graph.add_node(represent_final_answer,name="represent_final_answer")
+
+# Edges
+sql_agent_graph.add_edge(START, "curate_ques")
+sql_agent_graph.add_edge("curate_ques", "prompt_query_context")
+sql_agent_graph.add_edge("prompt_query_context", "generate_sql")
+sql_agent_graph.add_edge("generate_sql", "is_safe_sql")
+
+# Conditional Edge Function
+def is_safe_sql_edge(state: AgentSchema) -> str:
+    
