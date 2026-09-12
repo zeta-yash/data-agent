@@ -193,4 +193,4 @@ sql_agent_graph.add_edge("generate_sql", "is_safe_sql")
 
 # Conditional Edge Function
 def is_safe_sql_edge(state: AgentSchema) -> str:
-    
+    print
