@@ -193,4 +193,29 @@ sql_agent_graph.add_edge("generate_sql", "is_safe_sql")
 
 # Conditional Edge Function
 def is_safe_sql_edge(state: AgentSchema) -> str:
-    print
+    is_safe = state.is_safe_sql_response
+
+    if is_safe.lower == "yes":
+        return "execute_sql"
+    else:
+        return "canceled_sql"
+
+
+# these edges will act as dotted edges in the graph representing conditional edges 
+sql_agent_graph.add_conditional_edges("is_safe_sql",is_safe_sql_edge,
+                                      {"execute_sql":"execute_sql",
+                                       "canceled_sql":"canceled_sql"})
+
+
+sql_agent_graph.add_edge("canceled_sql", END)
+sql_agent_graph.add_edge("execute_sql", "represent_final_answer")
+sql_agent_graph.add_edge("represent_final_answer",END)
+
+# compile the graph
+
+sql_analyst = sql_agent_graph.compile()
+
+from IPython.display import display, Image
+img = Image(sql_analyst.get_graph().draw_mermaid_png())
+with open ("sql_analyst.png", "wb") as f:
+    f.write(img.data) 

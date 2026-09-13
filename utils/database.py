@@ -12,12 +12,12 @@ class DatabaseUtil:
 
     def schema_details(self, schema_name): # find the context from the database
 
-        try:
-            schema_info_context = "" #isme dheere dheere table ki details (t_name, all col names ,dummy data) add hota jayega
-            connection = self.connection 
-            cursor = connection.cursor()
+        schema_info_context = "" #isme dheere dheere table ki details (t_name, all col names ,dummy data) add hota jayega
+        connection = self.connection 
+        cursor = connection.cursor()
 
-            schema_info_context = f"Database Schema: {schema_name} \n"
+        schema_info_context = f"Database Schema: {schema_name} \n"
+        try:
             cursor.execute("SELECT table_name from information_schema.tables where table_schema = %s;",(schema_name,)) 
             #information schema ek default master table hai that stores all table names
 

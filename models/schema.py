@@ -1,9 +1,10 @@
-from pydantic import BaseModel,Field #basemodel and field tells it's using strict mode
+from pydantic import BaseModel,Field,ConfigDict #basemodel and field tells it's using strict mode
 from typing import Annotated, Literal
 from operator import add
 
 
 class AgentSchema(BaseModel):
+    # model_config = ConfigDict(arbitrary_types_allowed=True) # Added configuration with the help of gemma
     # LLM's read all this - as a comlete context
     # ye description - AI model ke samajhne ke liye hai
     messages : Annotated[list,add] = Field(..., description="List of messages to be processed by the agent")
@@ -19,9 +20,10 @@ class AgentSchema(BaseModel):
 
 
 class JudgeSchema(BaseModel):
+    # model_config = ConfigDict(arbitrary_types_allowed=True) # Added configuration for arbitrary types
     # will judge that the generated SQL query is safe to proceed or not
     # and add additional comment for their accent on that YES or NO
 
-    answer : Literal = Field(..., description="Indicates whether the generated SQL query is safe to execute or not")
+    answer : Literal["Yes","No"] = Field(..., description="Indicates whether the generated SQL query is safe to execute or not")
     comments : str = Field(..., description="Additional comments or feedback from the judge regarding the SQL query")
 
