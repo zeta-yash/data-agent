@@ -248,4 +248,4 @@ print(sql_analyst_response['sql_query_execution_result'])
 print("****************************************************")
 print(sql_analyst_response['prompt_query_context'])
 
-
+# ..
