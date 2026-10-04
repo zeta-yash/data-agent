@@ -28,7 +28,7 @@ class ETLTools:
             response.raise_for_status()
             data = response.json()
 
-            filename = os.path.join(output_folder,f"extracted_data.(format)")
+            filename = os.path.join(output_folder,f"extracted_data.{format}")
             os.makedirs(output_folder, exist_ok=True)
 
             df = pd.json_normalize(data['results'])
@@ -46,7 +46,49 @@ class ETLTools:
         except requests.exceptions.RequestException as e:
             return f"Failed to extract data: {e}" 
 
+    def transform_load_context(self, file_path:str):
+        """
+        This tool transforms the data from the specified file and loads into the desired location (output_folder).
+
+        Args:
+            file_path (str) : the path to the file containing the data to be transformed.
+        Returns:
+            str: a message, indicating the success or the failure of the operation. 
+        """
+        file_extension = os.path.plittext(file_path)[1].lower()
+
+        if file_extension == "csv":
+            df = pd.read_csv(file_path)
+        elif file_extension ==".json":
+            df = pd.read_json(file_path, lines=True)
+        elif file_extension == ".parquet":
+            df = pd.read_parquet(file_path)
+        else:
+            return f"Unsupported file format: {file_extension}"
+
+        top_3_rows = str(df.head(3))
+
+        return top_3_rows
+
+    def execute_code(self,code:str):
+
+        """
+        This tool executes the provided code and returns the output.
+
+        Args:
+            code (str): The code to be executed.
+        Returns:
+            str: The output of the executed code or an error message if execution fails.
+        """
+
+        try:
+            exec(code)
+            return "Code executed sucessfully."
+        except Exception as e:
+            return f"Failed to execute code: {e}"
+
 
 if __name__ == "__main__":
     obj = ETLTools()
-    print(obj.extract_load("https://pokeapi.co/api/v2/pokemon","data/extract","csv"))
+    path = "/Users/yashgupta/Project/Data_Agent/data/extract/extracted_data.csv"
+    print(obj.transform_load_context(path,"/Users/yashgupta/Project/Data_Agent/data/transform"))

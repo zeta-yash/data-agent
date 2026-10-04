@@ -13,11 +13,11 @@ def pick_llm(level:str)->str:
         str: The name of the LLM to be used for processing the query.
     """
     if level.lower()== "low":
-        llm = ChatMistralAI(model_name="ministral-3b-latest",temperature=0)
+        llm = ChatMistralAI(model_name="ministral-3b-latest",temperature=0, model_kwargs={"reasoning_effort":"none"})
     elif level.lower() == "medium":
-        llm = ChatMistralAI(model_name="ministral-8b-latest",temperature=0)
+        llm = ChatMistralAI(model_name="ministral-8b-latest",temperature=0, model_kwargs={"reasoning_effort":"none"})
     elif level.lower() == "high":
-        llm = ChatMistralAI(model_name="mistral-large-latest",temperature=0)
+        llm = ChatMistralAI(model_name="mistral-large-latest",temperature=0, model_kwargs={"reasoning_effort":"none"})
     else:
         raise ValueError(f"Unsupported level: {level}. ")
 
