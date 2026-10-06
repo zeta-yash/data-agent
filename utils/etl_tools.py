@@ -92,3 +92,5 @@ if __name__ == "__main__":
     obj = ETLTools()
     path = "/Users/yashgupta/Project/Data_Agent/data/extract/extracted_data.csv"
     print(obj.transform_load_context(path,"/Users/yashgupta/Project/Data_Agent/data/transform"))
+
+    # .

@@ -14,7 +14,7 @@ from langchain_mistralai import ChatMistralAI
 
 # -------------------------------- ETL AGENT --------------------
 @tool
-def extract_load(self, url:str, output_folder:str,format:str):
+def extract_load_tool(self, url:str, output_folder:str,format:str):
     """
 
     This tool extracts the data form the API (url) and loads it into the the desired locaiton (desitnation).
@@ -77,3 +77,41 @@ def transform_load_tool(input_file_path: str, output_folder:str, output_format:s
     results = etl_tools.execute_code(pandas_code)
 
     return f"The data is transformed and saved at {output_folder} in {output_format} format. \n\n Pandas code Executed: \n {pandas_code} \n\n Execution Result : \n {response} "
+
+# Toolkit
+tools = [extract_load_tool,transform_load_tool]
+
+llm = pick_llm("medium")
+llm_bind = llm.bind_tools(tools)
+
+# ------------------------------------- AGENT GRAPH ----------------------
+
+def llm_node(state: ETLAgentSchema):
+
+    messages = state.messages
+
+    prompt = f"""
+        You are a Python Data Analyst who has access to tools that can extract and load, 
+            transform and load data. You will be provided with a user's question 
+            and you would need to perform the right ETL operations as per the user's question. 
+            If the operation is performed then inform the user and end the coversation.
+            Here's the chat history: {messages}\n
+    """
+    final_answer = llm_bind.invoke(prompt)
+    
+    state.messages = messages + [final_answer]
+
+    return state
+
+def tool_node(state: ETLAgentSchema):
+
+    tools_by_name = {tool.name: tool for tool in tools}
+
+
+if __name__ == "__main__":
+    llm_bind = pick_llm("medium").bind_tools(tools)
+    print(llm_bind.invoke("I want to extract the data from the API endpoint 'https://api.example.com/data' and save it as a CSV file in the folder '/data/output' . "))
+
+    '''
+    tool_calls=[{'name': 'extract_load_tool', 'args': {'url': 'https://api.example.com/data', 'output_folder': '/data/output', 'format': 'csv'}, 'id': 'o1JoclBK4', 'type': 'tool_call'}]
+    '''
