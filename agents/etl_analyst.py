@@ -10,7 +10,7 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.graph import StateGraph, START, END
 from langchain.tools import tool
 # from langchain_anthropic import ChatAnthropic
-from langchain_mistralai import ChatMistralAI
+
 
 # -------------------------------- ETL AGENT --------------------
 @tool
@@ -82,7 +82,7 @@ def transform_load_tool(input_file_path: str, output_folder:str, output_format:s
 tools = [extract_load_tool,transform_load_tool]
 
 llm = pick_llm("medium")
-llm_bind = llm.bind_tools(tools)
+llm_bind = llm.bind_tools(tools) #langchain bind function
 
 # ------------------------------------- AGENT GRAPH ----------------------
 

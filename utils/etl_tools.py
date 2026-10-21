@@ -55,9 +55,9 @@ class ETLTools:
         Returns:
             str: a message, indicating the success or the failure of the operation. 
         """
-        file_extension = os.path.plittext(file_path)[1].lower()
+        file_extension = os.path.splitext(file_path)[1].lower()
 
-        if file_extension == "csv":
+        if file_extension == ".csv":
             df = pd.read_csv(file_path)
         elif file_extension ==".json":
             df = pd.read_json(file_path, lines=True)
@@ -82,7 +82,7 @@ class ETLTools:
         """
 
         try:
-            exec(code)
+            exec(code) #built-in function to execute the code (string to tokens)
             return "Code executed sucessfully."
         except Exception as e:
             return f"Failed to execute code: {e}"
@@ -91,6 +91,6 @@ class ETLTools:
 if __name__ == "__main__":
     obj = ETLTools()
     path = "/Users/yashgupta/Project/Data_Agent/data/extract/extracted_data.csv"
-    print(obj.transform_load_context(path,"/Users/yashgupta/Project/Data_Agent/data/transform"))
+    print(obj.transform_load_context(path))
 
-    # .
+    
