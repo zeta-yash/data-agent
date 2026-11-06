@@ -105,7 +105,10 @@ def llm_node(state: ETLAgentSchema):
 
 def tool_node(state: ETLAgentSchema):
 
+    """This node is responsible for calling the tools and passing the results to the next node. """
+    tool_results = []
     tools_by_name = {tool.name: tool for tool in tools}
+
 
 
 if __name__ == "__main__":
