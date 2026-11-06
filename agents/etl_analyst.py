@@ -108,13 +108,52 @@ def tool_node(state: ETLAgentSchema):
     """This node is responsible for calling the tools and passing the results to the next node. """
     tool_results = []
     tools_by_name = {tool.name: tool for tool in tools}
+    tool_calls = state.messages[-1].tool_calls
+
+    for tool_call in tool_calls:
+        tool = tools_by_name[tool_call['name']]
+        observation  = tools.invoke(tool_call['args'])
+        tool_results.append(ToolMessage(content=observation, tool_call_id = tool_call['id']))
+
+    state.messages = state.messages + tool_results
+
+    return state
+
+# Nodes and Edges
+
+elt_analyst_graph = StateGraph(ETLAgentSchema)
+
+elt_analyst_graph.add_node("llm_node",llm_node)
+elt_analyst_graph.add_node("tool_node",tool_node)
+
+elt_analyst_graph.add_edge(START, "llm_node")
+
+def is_tool_call(state: ETLAgentSchema):
+    tool_calls = state.messages[-1].tool_calls
+
+    if tool_calls:
+        return "tool_node"
+    else:
+        return  "end"
+
+elt_analyst_graph.add_conditional_edges("llm_node",is_tool_call,
+                                        {
+                                            "tool_node":"tool_node",
+                                            "end":END
+                                        })
+
+elt_analyst_graph.add_edge("tool_node","llm_node")
 
 
 
 if __name__ == "__main__":
-    llm_bind = pick_llm("medium").bind_tools(tools)
-    print(llm_bind.invoke("I want to extract the data from the API endpoint 'https://api.example.com/data' and save it as a CSV file in the folder '/data/output' . "))
 
+    elt_analyst = elt_analyst_graph.compile()
+    # display the graph
+    from IPython.display import display, Image
+    img = Image(elt_analyst.get_graph().draw_mermaid_png())
+    with open ("etl_analyst_graph.png", "wb") as f:
+        f.write(img.data)
     '''
     tool_calls=[{'name': 'extract_load_tool', 'args': {'url': 'https://api.example.com/data', 'output_folder': '/data/output', 'format': 'csv'}, 'id': 'o1JoclBK4', 'type': 'tool_call'}]
     '''
