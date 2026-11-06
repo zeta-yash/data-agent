@@ -14,7 +14,7 @@ from langchain.tools import tool
 
 # -------------------------------- ETL AGENT --------------------
 @tool
-def extract_load_tool(self, url:str, output_folder:str,format:str):
+def extract_load_tool(url:str, output_folder:str, format:str):
     """
 
     This tool extracts the data form the API (url) and loads it into the the desired locaiton (desitnation).
@@ -112,7 +112,7 @@ def tool_node(state: ETLAgentSchema):
 
     for tool_call in tool_calls:
         tool = tools_by_name[tool_call['name']]
-        observation  = tools.invoke(tool_call['args'])
+        observation  = tool.invoke(tool_call['args'])
         tool_results.append(ToolMessage(content=observation, tool_call_id = tool_call['id']))
 
     state.messages = state.messages + tool_results
@@ -121,12 +121,12 @@ def tool_node(state: ETLAgentSchema):
 
 # Nodes and Edges
 
-elt_analyst_graph = StateGraph(ETLAgentSchema)
+etl_analyst_graph = StateGraph(ETLAgentSchema)
 
-elt_analyst_graph.add_node("llm_node",llm_node)
-elt_analyst_graph.add_node("tool_node",tool_node)
+etl_analyst_graph.add_node("llm_node",llm_node)
+etl_analyst_graph.add_node("tool_node",tool_node)
 
-elt_analyst_graph.add_edge(START, "llm_node")
+etl_analyst_graph.add_edge(START, "llm_node")
 
 def is_tool_call(state: ETLAgentSchema):
     tool_calls = state.messages[-1].tool_calls
@@ -136,24 +136,37 @@ def is_tool_call(state: ETLAgentSchema):
     else:
         return  "end"
 
-elt_analyst_graph.add_conditional_edges("llm_node",is_tool_call,
+etl_analyst_graph.add_conditional_edges("llm_node",is_tool_call,
                                         {
                                             "tool_node":"tool_node",
                                             "end":END
                                         })
 
-elt_analyst_graph.add_edge("tool_node","llm_node")
+etl_analyst_graph.add_edge("tool_node","llm_node")
 
 
+etl_analyst = etl_analyst_graph.compile()
 
 if __name__ == "__main__":
 
-    elt_analyst = elt_analyst_graph.compile()
-    # display the graph
-    from IPython.display import display, Image
-    img = Image(elt_analyst.get_graph().draw_mermaid_png())
-    with open ("etl_analyst_graph.png", "wb") as f:
-        f.write(img.data)
+    # # display the graph
+    # from IPython.display import display, Image
+    # img = Image(etl_analyst.get_graph().draw_mermaid_png())
+    # with open ("etl_analyst_graph.png", "wb") as f:
+    #     f.write(img.data)
+
+    # response = etl_analyst.invoke(
+    #     {"messages":[HumanMessage(content="I want to extract the data from the API endpoint 'https://pokeapi.co/api/v2/pokemon' and save it to data/extract folder in csv folder")]}
+    # )
+
+    response = etl_analyst.invoke(
+         {"messages":[HumanMessage(content=f"""
+            I want to transform the data stored in the '/Users/yashgupta/Project/Data_Agent/data/extract/extracted_data.csv' file 
+            and save the transformed data in the '/Users/yashgupta/Project/Data_Agent/data/transform' folder in the csv format.
+            The transformation should filter the data to show bulbasaur pokemon only.""")]}
+    )
+
+    print(response)
     '''
     tool_calls=[{'name': 'extract_load_tool', 'args': {'url': 'https://api.example.com/data', 'output_folder': '/data/output', 'format': 'csv'}, 'id': 'o1JoclBK4', 'type': 'tool_call'}]
     '''
