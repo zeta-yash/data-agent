@@ -223,30 +223,28 @@ sql_analyst = sql_agent_graph.compile()
 #     f.write(img.data)
 
 
-input_schema = {
-        "messages": [],
-        "user_question": "What are the different types of Payment Methods we have in our database",
-        "curated_ques": "",
-        "prompt_query_context": "",
-        "generated_sql_query": "",
-        "is_safe": "No",
-        "comments": "",
-        "sql_query_execution_result": "",
-        "final_answer": ""
-    }
+if __name__ == "__main__":
+    input_schema = {
+            "messages": [],
+            "user_question": "What are the different types of Payment Methods we have in our database",
+            "curated_ques": "",
+            "prompt_query_context": "",
+            "generated_sql_query": "",
+            "is_safe": "No",
+            "comments": "",
+            "sql_query_execution_result": "",
+            "final_answer": ""
+        }
 
-sql_analyst_response = sql_analyst.invoke(input_schema)
+    sql_analyst_response = sql_analyst.invoke(input_schema)
 
-
-print(sql_analyst_response['curated_ques'])
-print("****************************************************")
-print(sql_analyst_response['generated_sql_query'])
-print("****************************************************")
-print(sql_analyst_response['messages'])
-print("****************************************************")
-print(sql_analyst_response['sql_query_execution_result'])
-print("****************************************************")
-print(sql_analyst_response['prompt_query_context'])
-# print(sql_analyst_response['prompt_query_context'])kf
-
+    print(sql_analyst_response['curated_ques'])
+    print("****************************************************")
+    print(sql_analyst_response['generated_sql_query'])
+    print("****************************************************")
+    print(sql_analyst_response['messages'])
+    print("****************************************************")
+    print(sql_analyst_response['sql_query_execution_result'])
+    print("****************************************************")
+    print(sql_analyst_response['prompt_query_context'])
 

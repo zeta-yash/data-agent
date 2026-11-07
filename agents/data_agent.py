@@ -10,12 +10,14 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.graph import StateGraph, START, END
 from langchain.tools import tool
 from etl_analyst import etl_analyst
+from sql_analyst import sql_analyst
+
 
 llm = pick_llm("medium")
 
 llm_router = llm.with_structured_output(RouterSchema)
 
-print(llm_router.invoke("I want to extract data from the API and load it into the destination folder as CSV file."))
+
 
 #-------------- DATA AGENT GRAPH----------------------------
 
@@ -26,13 +28,82 @@ def router_node(state:DataAgentSchema):
     route_response = route_response_dict['answer']
     state.route_response = route_response
 
+    return state  # Bug 1 fix: missing return state
+
 def etl_node(state:DataAgentSchema):
     message = state.messages[-1].content
+
     response = etl_analyst.invoke(
-             {"messages":[HumanMessage(content=f"""
-                I want to transform the data stored in the '/Users/yashgupta/Project/Data_Agent/data/extract/extracted_data.csv' file 
-                and save the transformed data in the '/Users/yashgupta/Project/Data_Agent/data/transform' folder in the csv format.
-                The transformation should filter the data to show bulbasaur pokemon only.""")]}
-        )
+        {"messages": [HumanMessage(content=f"{message}")]}  # Bug 2 fix: must be a list, not a bare HumanMessage
+    )
+    final_msg = AIMessage(content=response['messages'][-1].content)  # Bug 3 fix: extract final AI text, not raw dict
+    state.messages = state.messages + [final_msg]
+
+    return state  # Bug 1 fix (same pattern): missing return state
+
+def sql_node(state:DataAgentSchema):
+
+    message = state.messages[-1].content
+
+    input_schema = {
+        "messages": [],
+        "user_question": f"{message}",
+        "curated_ques": "",
+        "prompt_query_context": "",
+        "generated_sql_query": "",
+        "is_safe": "No",
+        "comments": "",
+        "sql_query_execution_result": "",
+        "final_answer": ""
+    }
+
+    response = sql_analyst.invoke(input_schema)
+
+    final_msg = AIMessage(content=response['final_answer'])  # Bug 3 fix (sql): extract final_answer string, not raw dict
+    state.messages = state.messages + [final_msg]
+
+    return state
+
+data_agent_graph = StateGraph(DataAgentSchema)
+
+data_agent_graph.add_node("router_node",router_node)
+data_agent_graph.add_node("etl_node", etl_node)
+data_agent_graph.add_node("sql_node", sql_node)
+
+data_agent_graph.add_edge(START, "router_node")
+def route_edge(state:DataAgentSchema):
+    if state.route_response == "sql":
+        return "sql_node"
+    elif state.route_response == "etl":
+        return "etl_node"
+    else:
+        raise ValueError(f"Invalid route response: {state.route_response}")
+
+data_agent_graph.add_conditional_edges( "router_node",route_edge,
+    {
+        "sql_node":"sql_node",
+        "etl_node":"etl_node"
+    }
+)
+
+
+
+data_agent_graph.add_edge("etl_node", END)  # Bug 4 fix: terminal nodes need edges to END
+data_agent_graph.add_edge("sql_node", END)  # Bug 4 fix
+
+data_agent = data_agent_graph.compile()  # Bug 5 fix: typo "complie" → "compile"
+
+# Optional — only run graph visualisation in interactive/notebook environments
+# from IPython.display import display, Image
+# img = Image(data_agent.get_graph().draw_mermaid_png())
+# with open("data_agent_graph.png", "wb") as f:
+#     f.write(img.data)
+if __name__ == "__main__":
+    response = data_agent.invoke(
+        {"messages":[HumanMessage(content="I want to extract the data from the API endpoint 'https://pokeapi.co/api/v2/pokemon' and save it to data/extract folder in the csv folder")],
+         "route_response": ""}
+    )
+
+    print(response)
 
 

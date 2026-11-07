@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.llm_pick import pick_llm
 from utils.etl_tools import ETLTools
 from models.schema import ETLAgentSchema
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage, SystemMessage  # #ai-help
 from langgraph.graph import StateGraph, START, END
 from langchain.tools import tool
 # from langchain_anthropic import ChatAnthropic
@@ -48,6 +48,9 @@ def transform_load_tool(input_file_path: str, output_folder:str, output_format:s
     """
     etl_tools = ETLTools()
 
+    # Ensure output folder exists before the LLM-generated code tries to write to it #ai-help
+    os.makedirs(output_folder, exist_ok=True)  # #ai-help
+
     top_3_rows = etl_tools.transform_load_context(input_file_path)
 
     llm = pick_llm("medium")
@@ -73,10 +76,10 @@ def transform_load_tool(input_file_path: str, output_folder:str, output_format:s
 
     pandas_code = response.strip().strip('```').lstrip('python').strip()
 
-    #Execute the pandas code
-    results = etl_tools.execute_code(pandas_code)
+    # Execute the pandas code — raises RuntimeError on failure so the agent sees it #ai-help
+    result = etl_tools.execute_code(pandas_code)  # #ai-help
 
-    return f"The data is transformed and saved at {output_folder} in {output_format} format. \n\n Pandas code Executed: \n {pandas_code} \n\n Execution Result : \n {response} "
+    return f"The data is transformed and saved at {output_folder} in {output_format} format.\n\nPandas code executed:\n{pandas_code}\n\nExecution result: {result}"  # #ai-help
 
 # Toolkit
 tools = [extract_load_tool,transform_load_tool]
@@ -90,16 +93,16 @@ def llm_node(state: ETLAgentSchema):
 
     messages = state.messages
 
-    prompt = f"""
-        You are a Python Data Analyst who has access to tools that can extract and load, 
-            transform and load data. You will be provided with a user's question 
-            and you would need to perform the right ETL operations as per the user's question. 
-            If the operation is performed then inform the user and end the coversation.
-            Here's the chat history: {messages}\n
-    """
-    final_answer = llm_bind.invoke(prompt)
-    
-    state.messages = messages + [final_answer]
+    # If this is the first turn, prepend the system instruction
+    system_prompt = SystemMessage(content="""You are a Python Data Analyst who has access to tools 
+        that can extract and load, transform and load data. Perform the right ETL operations 
+        as per the user's question. Once the operation is done, inform the user and stop.""")
+
+    # Pass message list directly — avoids stringifying history into a growing prompt #ai-help
+    conversation = [system_prompt] + messages  # #ai-help
+    final_answer = llm_bind.invoke(conversation)  # #ai-help
+
+    state.messages = [final_answer]  # LangGraph's `add` reducer will append this #ai-help
 
     return state
 
@@ -162,7 +165,7 @@ if __name__ == "__main__":
     response = etl_analyst.invoke(
          {"messages":[HumanMessage(content=f"""
             I want to transform the data stored in the '/Users/yashgupta/Project/Data_Agent/data/extract/extracted_data.csv' file 
-            and save the transformed data in the '/Users/yashgupta/Project/Data_Agent/data/transform' folder in the csv format.
+            and save the transformed data in the '/Users/yashgupta/Project/Data_Agent/data/transform/' folder in the csv format.
             The transformation should filter the data to show bulbasaur pokemon only.""")]}
     )
 

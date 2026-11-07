@@ -70,8 +70,7 @@ class ETLTools:
 
         return top_3_rows
 
-    def execute_code(self,code:str):
-
+    def execute_code(self, code: str):  # #ai-help
         """
         This tool executes the provided code and returns the output.
 
@@ -80,12 +79,16 @@ class ETLTools:
         Returns:
             str: The output of the executed code or an error message if execution fails.
         """
+        import pandas as pd  # make pd available inside exec scope #ai-help
+        import os  # #ai-help
+
+        exec_globals = {"pd": pd, "os": os}  # #ai-help
 
         try:
-            exec(code) #built-in function to execute the code (string to tokens)
-            return "Code executed sucessfully."
+            exec(code, exec_globals)  # pass globals so pd, os etc. are available #ai-help
+            return "Code executed successfully."
         except Exception as e:
-            return f"Failed to execute code: {e}"
+            raise RuntimeError(f"Failed to execute code: {e}\n\nCode attempted:\n{code}")  # #ai-help
 
 
 if __name__ == "__main__":
