@@ -27,9 +27,15 @@ class JudgeSchema(BaseModel):
     answer : Literal["Yes","No"] = Field(..., description="Indicates whether the generated SQL query is safe to execute or not")
     comments : str = Field(..., description="Additional comments or feedback from the judge regarding the SQL query")
 
+
+class ETLAgentSchema(BaseModel):
+    messages : Annotated[list,add]= Field(..., description="List of messages to processed by the ETL agent")
+
 class RouterSchema(BaseModel):
     answer: Literal["sql","etl"] = Field(..., description="Indicates whether the user's question is related to SQL or ETL operations")
     comments: str = Field(..., description="Additional comments or feedback regarding the classification of the user's question")
 
-class ETLAgentSchema(BaseModel):
-    messages : Annotated[list,add]= Field(..., description="List of messages to processed by the ETL agent")
+class DataAgentSchema(BaseModel):
+    messages : Annotated[list,add] = Field(...,description="List of messages to processed by the data agent")
+    route_response : str = Field(..., description="The response from the router indicating whether to execute SQL or ETL operations")
+    
