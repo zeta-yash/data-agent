@@ -9,8 +9,8 @@ from models.schema import RouterSchema,DataAgentSchema
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.graph import StateGraph, START, END
 from langchain.tools import tool
-from etl_analyst import etl_analyst
-from sql_analyst import sql_analyst
+from agents.etl_analyst import etl_analyst
+from agents.sql_analyst import sql_analyst
 
 
 llm = pick_llm("medium")
@@ -23,27 +23,36 @@ llm_router = llm.with_structured_output(RouterSchema)
 
 def router_node(state:DataAgentSchema):
     message = state.messages[-1].content
+    print(f"\n[DataAgent] Routing query: {message[:80]}...")
 
-    route_response_dict = llm_router.invoke(message).model_dump()
-    route_response = route_response_dict['answer']
-    state.route_response = route_response
+    prompt = f"""You are an expert request router. Classify the user query into either 'sql' or 'etl':
+- 'sql': For queries asking questions about existing database records, SQL tables, querying PostgreSQL, running queries, or reporting on database data.
+- 'etl': For queries involving extracting data from APIs/URLs, downloading data, transforming files (CSV, JSON, Parquet), filtering file data, or saving files to folders.
 
-    return state  # Bug 1 fix: missing return state
+User Query: {message}"""
+
+    route_response_dict = llm_router.invoke(prompt).model_dump()
+    route_response = route_response_dict['answer'].lower().strip()
+    print(f"[DataAgent] Route selected: {route_response.upper()}")
+
+    return {"route_response": route_response}  # #ai-help - return dict to avoid duplicating messages
 
 def etl_node(state:DataAgentSchema):
     message = state.messages[-1].content
+    print("[DataAgent] Dispatching to ETL Analyst...")
 
     response = etl_analyst.invoke(
-        {"messages": [HumanMessage(content=f"{message}")]}  # Bug 2 fix: must be a list, not a bare HumanMessage
+        {"messages": [HumanMessage(content=f"{message}")]}
     )
-    final_msg = AIMessage(content=response['messages'][-1].content)  # Bug 3 fix: extract final AI text, not raw dict
-    state.messages = state.messages + [final_msg]
+    final_msg = AIMessage(content=response['messages'][-1].content)
+    print("[DataAgent] ETL Analyst completed.")
 
-    return state  # Bug 1 fix (same pattern): missing return state
+    return {"messages": [final_msg]}  # #ai-help - return delta so add reducer appends cleanly
 
 def sql_node(state:DataAgentSchema):
 
     message = state.messages[-1].content
+    print("[DataAgent] Dispatching to SQL Analyst...")
 
     input_schema = {
         "messages": [],
@@ -59,10 +68,10 @@ def sql_node(state:DataAgentSchema):
 
     response = sql_analyst.invoke(input_schema)
 
-    final_msg = AIMessage(content=response['final_answer'])  # Bug 3 fix (sql): extract final_answer string, not raw dict
-    state.messages = state.messages + [final_msg]
+    final_msg = AIMessage(content=response['final_answer'])
+    print("[DataAgent] SQL Analyst completed.")
 
-    return state
+    return {"messages": [final_msg]}  # #ai-help - return delta so add reducer appends cleanly
 
 data_agent_graph = StateGraph(DataAgentSchema)
 
@@ -105,5 +114,3 @@ if __name__ == "__main__":
     )
 
     print(response)
-
-

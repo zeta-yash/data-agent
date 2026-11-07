@@ -76,7 +76,7 @@ class DatabaseUtil:
                 connection.close()
     
 
-if __name__ == "main":
+if __name__ == "__main__":
     # run only when this databse.py will be run directly 
     # this chunk would not run itself in imports
     obj = DatabaseUtil({

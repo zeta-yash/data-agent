@@ -102,9 +102,7 @@ def llm_node(state: ETLAgentSchema):
     conversation = [system_prompt] + messages  # #ai-help
     final_answer = llm_bind.invoke(conversation)  # #ai-help
 
-    state.messages = [final_answer]  # LangGraph's `add` reducer will append this #ai-help
-
-    return state
+    return {"messages": [final_answer]}  # #ai-help - return delta dict so LangGraph's add reducer appends cleanly
 
 def tool_node(state: ETLAgentSchema):
 
@@ -114,13 +112,13 @@ def tool_node(state: ETLAgentSchema):
     tool_calls = state.messages[-1].tool_calls
 
     for tool_call in tool_calls:
+        print(f"  -> [ETL Tool] Running: {tool_call['name']}({tool_call['args']})")
         tool = tools_by_name[tool_call['name']]
         observation  = tool.invoke(tool_call['args'])
         tool_results.append(ToolMessage(content=observation, tool_call_id = tool_call['id']))
+        print(f"  -> [ETL Tool] Result: {observation[:100]}...")
 
-    state.messages = state.messages + tool_results
-
-    return state
+    return {"messages": tool_results}  # #ai-help - return delta dict so history does not duplicate
 
 # Nodes and Edges
 
