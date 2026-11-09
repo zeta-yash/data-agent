@@ -239,7 +239,7 @@ An intelligent multi-agent system built with **LangGraph** that processes natura
 [![Pandas](https://img.shields.io/badge/ETL-Pandas-150458.svg)](https://pandas.pydata.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> 🎥 **Video walkthrough:** [Watch the YouTube tutorial](https://youtu.be/7yOmi4IX-Rs)
+> 🎥 **Video walkthrough:** [Watch the YouTube tutorial](Coming Soon..!!)
 
 ---
 
